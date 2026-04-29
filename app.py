@@ -298,7 +298,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ── WEBHOOK ───────────────────────────────────────────────────────────────────
-WEBHOOK_URL = "https://timorbuild.app.n8n.cloud/webhook/war-room-sim"
+WEBHOOK_URL = "https://timorbuild.app.n8n.cloud/webhook-test/war-room-sim"
 
 # ── HEADER ────────────────────────────────────────────────────────────────────
 st.markdown("""
@@ -310,22 +310,40 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ── INPUT SECTION ─────────────────────────────────────────────────────────────
-st.markdown('<div class="section-label">Strategic Proposal</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-label">Client Profile — Who Are We?</div>', unsafe_allow_html=True)
+
+client_profile = st.text_area(
+    label="client_profile",
+    placeholder='e.g. "We are a premium EV taxi startup operating 500 cars across Jakarta, targeting corporate and airport routes."',
+    height=130,
+)
+
+st.markdown('<div class="section-label" style="margin-top:1.2rem;">Strategic Scenario / Proposal</div>', unsafe_allow_html=True)
 
 proposal = st.text_area(
     label="proposal",
-    placeholder='e.g. "We are dropping prices by 10% across our premium SKUs to pressure Competitor X out of the mid-market segment."',
-    height=180,
+    placeholder='e.g. "Grab increased prices by 15% — how should we respond?"',
+    height=150,
 )
 
 run = st.button("⚔  Run Simulation")
 
 # ── SIMULATION ────────────────────────────────────────────────────────────────
 if run:
-    if not proposal.strip():
+    if not client_profile.strip() and not proposal.strip():
         st.markdown("""
         <div class="error-card">
-          No strategic proposal detected. Input required before simulation can proceed.
+          Both Client Profile and Strategic Scenario are required before the simulation can proceed.
+        </div>""", unsafe_allow_html=True)
+    elif not client_profile.strip():
+        st.markdown("""
+        <div class="error-card">
+          Client Profile is empty. Define who you are before running the simulation.
+        </div>""", unsafe_allow_html=True)
+    elif not proposal.strip():
+        st.markdown("""
+        <div class="error-card">
+          No strategic scenario detected. Input required before simulation can proceed.
         </div>""", unsafe_allow_html=True)
     else:
         with st.spinner("Analysing competitive landscape... please stand by"):
@@ -333,7 +351,7 @@ if run:
                 response = requests.post(
                     WEBHOOK_URL,
                     headers={"Content-Type": "application/json"},
-                    data=json.dumps({"chatInput": proposal}),
+                    data=json.dumps({"client_profile": client_profile, "scenario": proposal}),
                     timeout=60,
                 )
                 response.raise_for_status()
