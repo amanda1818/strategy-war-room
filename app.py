@@ -1,343 +1,418 @@
 import streamlit as st
 import requests
-import json
 import time
 
-# ── Page config ───────────────────────────────────────────────────────────────
+# ── PAGE CONFIG ───────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="Strategy War Room",
-    page_icon="⚔️",
+    page_icon="🎯",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="collapsed"
 )
 
-# ── Custom CSS ────────────────────────────────────────────────────────────────
+# ── YOUR N8N WEBHOOK URL ──────────────────────────────────────────────────────
+WEBHOOK_URL = "PASTE_YOUR_PRODUCTION_WEBHOOK_URL_HERE"
+
+# ── CUSTOM CSS ────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&family=Inter:wght@300;400;500&display=swap');
 
-  :root {
-    --bg-void:      #060b14;
-    --bg-panel:     #0b1524;
-    --bg-card:      #0f1e35;
-    --border:       #1b3050;
-    --border-glow:  #1e5fa8;
-    --accent:       #2a7fd4;
-    --accent-dim:   #1a4f87;
-    --amber:        #d4862a;
-    --amber-dim:    #8a4f0f;
-    --text-primary: #c8ddf5;
-    --text-muted:   #4d6a8a;
-    --text-bright:  #e8f4ff;
-    --red-alert:    #c0392b;
-    --green-go:     #1a7a4a;
-  }
+/* ── RESET & BASE ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  html, body, [data-testid="stAppViewContainer"] {
-    background-color: var(--bg-void) !important;
-    font-family: 'IBM Plex Sans', sans-serif;
-    color: var(--text-primary);
-  }
-  [data-testid="stHeader"]  { background: transparent !important; }
-  [data-testid="stToolbar"] { display: none !important; }
-  [data-testid="stSidebar"] { display: none !important; }
-  footer { display: none !important; }
+.stApp {
+    background-color: #040d1a;
+    background-image:
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0,80,200,0.15), transparent),
+        repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(0,150,255,0.02) 40px, rgba(0,150,255,0.02) 41px),
+        repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(0,150,255,0.02) 40px, rgba(0,150,255,0.02) 41px);
+    min-height: 100vh;
+}
 
-  [data-testid="stAppViewContainer"]::before {
-    content: "";
-    position: fixed; inset: 0;
+/* hide streamlit chrome */
+#MainMenu, footer, header, .stDeployButton { display: none !important; }
+.block-container { padding: 0 !important; max-width: 100% !important; }
+
+/* ── SCAN LINE OVERLAY ── */
+.stApp::before {
+    content: '';
+    position: fixed;
+    inset: 0;
     background: repeating-linear-gradient(
-      0deg, transparent, transparent 2px,
-      rgba(0,20,50,0.15) 2px, rgba(0,20,50,0.15) 4px
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.08) 2px,
+        rgba(0,0,0,0.08) 4px
     );
-    pointer-events: none; z-index: 9999;
-  }
+    pointer-events: none;
+    z-index: 9999;
+}
 
-  .block-container { max-width: 960px !important; padding: 2.5rem 2rem !important; }
+/* ── MAIN WRAPPER ── */
+.war-room-wrapper {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+}
 
-  .war-room-header { text-align: center; margin-bottom: 2.5rem; position: relative; }
-  .war-room-header::before {
-    content: "⚔  CLASSIFIED  ⚔";
-    display: block;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.65rem; letter-spacing: 0.45em;
-    color: var(--red-alert); margin-bottom: 0.6rem; opacity: 0.85;
-  }
-  .war-room-header h1 {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(2.4rem, 5vw, 4rem);
-    letter-spacing: 0.06em; color: var(--text-bright); line-height: 1.05; margin: 0;
-    text-shadow: 0 0 40px rgba(42,127,212,0.45), 0 0 80px rgba(42,127,212,0.15);
-  }
-  .war-room-header .subtitle {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.72rem; letter-spacing: 0.25em; color: var(--text-muted); margin-top: 0.5rem;
-  }
-  .header-rule {
+/* ── HEADER ── */
+.header-block {
+    text-align: center;
+    margin-bottom: 56px;
+    position: relative;
+}
+
+.classified-tag {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 6px;
+    color: #ff3b3b;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.classified-tag::before,
+.classified-tag::after {
+    content: '';
+    width: 40px;
     height: 1px;
-    background: linear-gradient(90deg, transparent 0%, var(--border-glow) 30%, var(--accent) 50%, var(--border-glow) 70%, transparent 100%);
-    margin: 1.2rem auto 0; width: 70%;
-  }
+    background: #ff3b3b;
+    opacity: 0.6;
+}
 
-  .section-label {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.62rem; letter-spacing: 0.3em;
-    color: var(--accent); text-transform: uppercase;
-    margin-bottom: 0.5rem;
-    display: flex; align-items: center; gap: 0.5rem;
-  }
-  .section-label::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+.main-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(42px, 8vw, 86px);
+    line-height: 0.92;
+    color: #ffffff;
+    letter-spacing: 2px;
+    text-shadow:
+        0 0 40px rgba(0,120,255,0.4),
+        0 0 80px rgba(0,80,200,0.2);
+    margin-bottom: 6px;
+}
 
-  .stTextInput input {
-    background-color: var(--bg-card) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: 4px !important;
-    color: var(--text-primary) !important;
-    font-family: 'IBM Plex Sans', sans-serif !important;
-    font-size: 0.95rem !important;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
-  }
-  .stTextInput input:focus {
-    border-color: var(--accent) !important;
-    box-shadow: 0 0 0 2px rgba(42,127,212,0.18) !important;
+.main-title span {
+    color: #1a6eff;
+}
+
+.subtitle {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    color: rgba(255,255,255,0.35);
+    letter-spacing: 3px;
+    margin-top: 16px;
+}
+
+.header-line {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(26,110,255,0.5), transparent);
+    margin-top: 32px;
+}
+
+/* ── STATUS BAR ── */
+.status-bar {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 40px;
+    padding: 10px 16px;
+    border: 1px solid rgba(26,110,255,0.15);
+    background: rgba(26,110,255,0.04);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: rgba(255,255,255,0.3);
+    letter-spacing: 2px;
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #00ff88;
+    box-shadow: 0 0 8px #00ff88;
+    animation: pulse 2s infinite;
+    flex-shrink: 0;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+/* ── FORM SECTION ── */
+.section-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: #1a6eff;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(26,110,255,0.25);
+}
+
+/* ── INPUT OVERRIDES ── */
+.stTextInput > div > div > input,
+.stTextArea > div > div > textarea {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(26,110,255,0.25) !important;
+    border-radius: 0 !important;
+    color: #e8f0ff !important;
+    font-family: 'Share Tech Mono', monospace !important;
+    font-size: 14px !important;
+    padding: 14px 16px !important;
+    transition: border-color 0.2s, box-shadow 0.2s !important;
+    caret-color: #1a6eff !important;
+}
+
+.stTextInput > div > div > input:focus,
+.stTextArea > div > div > textarea:focus {
+    border-color: rgba(26,110,255,0.7) !important;
+    box-shadow: 0 0 0 1px rgba(26,110,255,0.3), inset 0 0 20px rgba(26,110,255,0.04) !important;
     outline: none !important;
-  }
-  .stTextInput input::placeholder { color: var(--text-muted) !important; }
-  .stTextInput label { display: none !important; }
+}
 
-  .stTextArea textarea {
-    background-color: var(--bg-card) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: 4px !important;
-    color: var(--text-primary) !important;
-    font-family: 'IBM Plex Sans', sans-serif !important;
-    font-size: 0.95rem !important; line-height: 1.7 !important;
-    resize: vertical !important;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
-  }
-  .stTextArea textarea:focus {
-    border-color: var(--accent) !important;
-    box-shadow: 0 0 0 2px rgba(42,127,212,0.18) !important;
-    outline: none !important;
-  }
-  .stTextArea textarea::placeholder { color: var(--text-muted) !important; }
-  .stTextArea label { display: none !important; }
+.stTextInput > div > div > input::placeholder,
+.stTextArea > div > div > textarea::placeholder {
+    color: rgba(255,255,255,0.18) !important;
+    font-style: normal !important;
+}
 
-  .stButton > button {
+/* hide streamlit labels (we use our own) */
+.stTextInput label, .stTextArea label { display: none !important; }
+
+/* ── BUTTON ── */
+.stButton > button {
+    background: transparent !important;
+    border: 1px solid #1a6eff !important;
+    border-radius: 0 !important;
+    color: #1a6eff !important;
+    font-family: 'Share Tech Mono', monospace !important;
+    font-size: 13px !important;
+    letter-spacing: 4px !important;
+    padding: 16px 40px !important;
     width: 100% !important;
-    background: linear-gradient(135deg, var(--accent-dim) 0%, var(--accent) 100%) !important;
-    border: 1px solid var(--accent) !important; border-radius: 4px !important;
-    color: #fff !important;
-    font-family: 'Bebas Neue', sans-serif !important;
-    font-size: 1.25rem !important; letter-spacing: 0.2em !important;
-    padding: 0.65rem 2rem !important; cursor: pointer !important;
-    transition: all 0.2s ease !important;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.4) !important;
-  }
-  .stButton > button:hover {
-    background: linear-gradient(135deg, var(--accent) 0%, #3d9ef0 100%) !important;
-    box-shadow: 0 0 20px rgba(42,127,212,0.4) !important;
-    transform: translateY(-1px) !important;
-  }
-  .stButton > button:active { transform: translateY(0) !important; }
+    cursor: pointer !important;
+    transition: all 0.2s !important;
+    position: relative !important;
+    overflow: hidden !important;
+    margin-top: 8px !important;
+}
 
-  .stSpinner > div { border-top-color: var(--accent) !important; }
-  [data-testid="stSpinner"] p {
-    font-family: 'IBM Plex Mono', monospace !important;
-    color: var(--text-muted) !important; font-size: 0.8rem !important; letter-spacing: 0.15em !important;
-  }
+.stButton > button::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(26,110,255,0.08);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+}
 
-  .intel-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border); border-left: 3px solid var(--accent);
-    border-radius: 4px; padding: 1.8rem 2rem; margin-top: 1.8rem;
-    position: relative; overflow: hidden;
-  }
-  .intel-card::before {
-    content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px;
-    background: linear-gradient(90deg, var(--accent) 0%, transparent 60%);
-  }
-  .intel-card-header {
-    display: flex; align-items: center; gap: 0.8rem;
-    margin-bottom: 1.2rem; padding-bottom: 0.8rem; border-bottom: 1px solid var(--border);
-  }
-  .intel-badge {
-    font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; letter-spacing: 0.25em;
-    color: var(--amber); background: rgba(212,134,42,0.1);
-    border: 1px solid var(--amber-dim); border-radius: 2px; padding: 0.2rem 0.5rem;
-  }
-  .intel-title {
-    font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem;
-    letter-spacing: 0.1em; color: var(--text-bright); flex: 1;
-  }
-  .intel-meta {
-    font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem;
-    color: var(--accent); letter-spacing: 0.08em;
-  }
-  .intel-timestamp {
-    font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem;
-    color: var(--text-muted); letter-spacing: 0.1em;
-  }
-  .intel-body {
-    font-size: 0.93rem; line-height: 1.8;
-    color: var(--text-primary); white-space: pre-wrap; word-wrap: break-word;
-  }
-  .intel-body strong { color: var(--text-bright); }
+.stButton > button:hover {
+    background: rgba(26,110,255,0.1) !important;
+    box-shadow: 0 0 20px rgba(26,110,255,0.25) !important;
+    color: #ffffff !important;
+}
 
-  .error-card {
-    background: rgba(192,57,43,0.08);
-    border: 1px solid rgba(192,57,43,0.35); border-left: 3px solid var(--red-alert);
-    border-radius: 4px; padding: 1.2rem 1.5rem; margin-top: 1.5rem;
-    font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem;
-    color: #e07070; letter-spacing: 0.04em;
-  }
-  .error-card::before {
-    content: "⚠  TRANSMISSION ERROR"; display: block;
-    font-size: 0.62rem; letter-spacing: 0.3em; color: var(--red-alert); margin-bottom: 0.5rem;
-  }
+.stButton > button:hover::before { transform: scaleX(1); }
 
-  .status-bar {
-    display: flex; align-items: center; gap: 1rem;
-    margin-top: 2.5rem; padding-top: 1rem; border-top: 1px solid var(--border);
-    font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem;
-    letter-spacing: 0.2em; color: var(--text-muted);
-  }
-  .status-dot {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: var(--green-go); box-shadow: 0 0 6px var(--green-go);
-    animation: pulse 2s infinite; flex-shrink: 0;
-  }
-  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+/* ── DIVIDER ── */
+.field-gap { margin-bottom: 28px; }
+
+/* ── OUTPUT PANEL ── */
+.output-panel {
+    margin-top: 48px;
+    border: 1px solid rgba(26,110,255,0.2);
+    background: rgba(10,20,40,0.6);
+    padding: 32px;
+    position: relative;
+}
+
+.output-panel::before {
+    content: 'INTEL REPORT';
+    position: absolute;
+    top: -1px;
+    left: 32px;
+    background: #1a6eff;
+    color: #ffffff;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    padding: 4px 12px;
+}
+
+.output-panel::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 32px; height: 32px;
+    border-top: 2px solid #1a6eff;
+    border-right: 2px solid #1a6eff;
+}
+
+.output-text {
+    font-family: 'Inter', sans-serif !important;
+    font-size: 15px !important;
+    line-height: 1.8 !important;
+    color: rgba(220,235,255,0.9) !important;
+    white-space: pre-wrap !important;
+}
+
+/* ── ERROR PANEL ── */
+.error-panel {
+    margin-top: 32px;
+    border: 1px solid rgba(255,59,59,0.3);
+    background: rgba(255,59,59,0.05);
+    padding: 20px 24px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: #ff6b6b;
+    letter-spacing: 1px;
+}
+
+/* ── LOADING ── */
+.stSpinner > div {
+    border-color: #1a6eff transparent transparent transparent !important;
+}
+
+/* ── FOOTER ── */
+.war-room-footer {
+    text-align: center;
+    margin-top: 64px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: rgba(255,255,255,0.12);
+    letter-spacing: 3px;
+}
+
+/* ── COLUMNS ── */
+[data-testid="column"] { padding: 0 8px !important; }
+[data-testid="column"]:first-child { padding-left: 0 !important; }
+[data-testid="column"]:last-child { padding-right: 0 !important; }
+
 </style>
 """, unsafe_allow_html=True)
 
-# ── WEBHOOK ───────────────────────────────────────────────────────────────────
-WEBHOOK_URL = "https://timorbuild.app.n8n.cloud/webhook/war-room-sim"
+# ── LAYOUT ────────────────────────────────────────────────────────────────────
+st.markdown('<div class="war-room-wrapper">', unsafe_allow_html=True)
 
-# ── HEADER ────────────────────────────────────────────────────────────────────
+# Header
 st.markdown("""
-<div class="war-room-header">
-  <h1>Strategy War Room<br>Competitor Response Simulator</h1>
-  <p class="subtitle">Real-time competitive intelligence &amp; scenario modelling</p>
-  <div class="header-rule"></div>
+<div class="header-block">
+    <div class="classified-tag">✕ &nbsp; CLASSIFIED &nbsp; ✕</div>
+    <div class="main-title">STRATEGY<br><span>WAR ROOM</span></div>
+    <div class="subtitle">COMPETITOR RESPONSE SIMULATOR &nbsp;·&nbsp; TRIPLE-GROUNDED AI</div>
+    <div class="header-line"></div>
 </div>
 """, unsafe_allow_html=True)
 
-# ── INPUTS ────────────────────────────────────────────────────────────────────
+# Status bar
+st.markdown("""
+<div class="status-bar">
+    <div class="status-dot"></div>
+    SYSTEM ONLINE &nbsp;·&nbsp; RAG ENGINE ACTIVE &nbsp;·&nbsp; INTEL FEEDS CONNECTED
+</div>
+""", unsafe_allow_html=True)
+
+# ── FORM ──────────────────────────────────────────────────────────────────────
+
+# Row 1: two columns
 col1, col2 = st.columns(2)
 
 with col1:
-    st.markdown('<div class="section-label">Target Competitor</div>', unsafe_allow_html=True)
-    competitor = st.text_input(
-        label="competitor",
-        placeholder="e.g. Grab, Gojek, Tesla, Shopee…",
-    )
+    st.markdown('<div class="section-label">TARGET COMPETITOR</div>', unsafe_allow_html=True)
+    competitor = st.text_input("competitor", placeholder="e.g. Grab", label_visibility="collapsed")
 
 with col2:
-    st.markdown('<div class="section-label">Target Industry</div>', unsafe_allow_html=True)
-    industry = st.text_input(
-        label="industry",
-        placeholder="e.g. Ride-hailing, EV, SaaS, E-commerce…",
-    )
+    st.markdown('<div class="section-label">TARGET INDUSTRY</div>', unsafe_allow_html=True)
+    industry = st.text_input("industry", placeholder="e.g. ride-hailing", label_visibility="collapsed")
 
-st.markdown('<div class="section-label" style="margin-top:1.2rem;">Strategic Scenario</div>', unsafe_allow_html=True)
-scenario = st.text_area(
-    label="scenario",
-    placeholder='e.g. "Grab increased prices by 15% across all categories. How should we respond to capture market share?"',
-    height=160,
-)
+st.markdown('<div class="field-gap"></div>', unsafe_allow_html=True)
 
-run = st.button("⚔  Run Simulation")
+# Client profile
+st.markdown('<div class="section-label">CLIENT PROFILE</div>', unsafe_allow_html=True)
+client_profile = st.text_input("client_profile", placeholder="e.g. Gojek, SEA ride-hailing, 40% market share in ID/VN", label_visibility="collapsed")
 
-# ── SIMULATION ────────────────────────────────────────────────────────────────
+st.markdown('<div class="field-gap"></div>', unsafe_allow_html=True)
+
+# Scenario
+st.markdown('<div class="section-label">STRATEGIC SCENARIO</div>', unsafe_allow_html=True)
+scenario = st.text_area("scenario", placeholder="e.g. Grab is dropping prices by 10% in Q3 2025. What should we do?", height=140, label_visibility="collapsed")
+
+st.markdown('<div class="field-gap"></div>', unsafe_allow_html=True)
+
+# Button
+run = st.button("✕  RUN SIMULATION")
+
+# ── EXECUTION ─────────────────────────────────────────────────────────────────
 if run:
-    fields = {
-        "Target Competitor":  competitor,
-        "Target Industry":    industry,
-        "Strategic Scenario": scenario,
-    }
-    missing = [label for label, val in fields.items() if not val.strip()]
-
-    if missing:
-        st.markdown(f"""
-        <div class="error-card">
-          Missing required fields: {", ".join(missing)}.<br>
-          All three inputs must be completed before the simulation can proceed.
-        </div>""", unsafe_allow_html=True)
+    if not competitor or not scenario:
+        st.markdown("""
+        <div class="error-panel">
+            ⚠ &nbsp; MISSING REQUIRED FIELDS — TARGET COMPETITOR AND SCENARIO ARE MANDATORY
+        </div>
+        """, unsafe_allow_html=True)
     else:
-        chat_input = (
-            f"Target Competitor: {competitor.strip()}\n"
-            f"Target Industry: {industry.strip()}\n"
-            f"Strategic Scenario: {scenario.strip()}"
-        )
-
-        with st.spinner("Analysing competitive landscape… please stand by"):
+        with st.spinner("Gathering intelligence across all three data sources..."):
+            payload = {
+                "client_profile": client_profile,
+                "competitor": competitor,
+                "industry": industry,
+                "scenario": scenario
+            }
             try:
-                response = requests.post(
-                    WEBHOOK_URL,
-                    headers={"Content-Type": "application/json"},
-                    data=json.dumps({"chatInput": chat_input}),
-                    timeout=60,
-                )
+                response = requests.post(WEBHOOK_URL, json=payload, timeout=180)
                 response.raise_for_status()
+                data = response.json()
 
-                try:
-                    data = response.json()
-                    if isinstance(data, list) and len(data) > 0:
-                        data = data[0]
-                    brief_text = (
-                        data.get("output")
-                        or data.get("text")
-                        or data.get("message")
-                        or data.get("response")
-                        or json.dumps(data, indent=2)
-                    )
-                except Exception:
-                    brief_text = response.text
-
-                timestamp = time.strftime("%Y-%m-%d  %H:%M:%S UTC", time.gmtime())
+                # n8n returns the agent output in different keys depending on setup
+                output = (
+                    data.get("output")
+                    or data.get("text")
+                    or data.get("message")
+                    or data.get("response")
+                    or str(data)
+                )
 
                 st.markdown(f"""
-                <div class="intel-card">
-                  <div class="intel-card-header">
-                    <span class="intel-badge">TOP SECRET</span>
-                    <span class="intel-title">Intelligence Brief</span>
-                    <span class="intel-meta">{competitor.strip().upper()} &nbsp;·&nbsp; {industry.strip().upper()}</span>
-                    <span class="intel-timestamp">{timestamp}</span>
-                  </div>
-                  <div class="intel-body">{brief_text}</div>
+                <div class="output-panel">
+                    <div class="output-text">{output}</div>
                 </div>
                 """, unsafe_allow_html=True)
 
             except requests.exceptions.Timeout:
                 st.markdown("""
-                <div class="error-card">
-                  Request timed out after 60 seconds. The simulation endpoint may be unavailable or overloaded.
-                </div>""", unsafe_allow_html=True)
-            except requests.exceptions.ConnectionError as e:
-                st.markdown(f"""
-                <div class="error-card">
-                  Connection failed. Verify the webhook URL is active and reachable.<br><br>{e}
-                </div>""", unsafe_allow_html=True)
-            except requests.exceptions.HTTPError as e:
-                st.markdown(f"""
-                <div class="error-card">
-                  HTTP {response.status_code} — {e}
-                </div>""", unsafe_allow_html=True)
+                <div class="error-panel">
+                    ⚠ &nbsp; REQUEST TIMEOUT — THE AGENT IS STILL PROCESSING. REFRESH AND TRY A SIMPLER SCENARIO FIRST.
+                </div>
+                """, unsafe_allow_html=True)
             except Exception as e:
                 st.markdown(f"""
-                <div class="error-card">
-                  Unexpected error: {e}
-                </div>""", unsafe_allow_html=True)
+                <div class="error-panel">
+                    ⚠ &nbsp; CONNECTION ERROR — {str(e).upper()}
+                </div>
+                """, unsafe_allow_html=True)
 
-# ── STATUS BAR ────────────────────────────────────────────────────────────────
+# Footer
 st.markdown("""
-<div class="status-bar">
-  <span class="status-dot"></span>
-  <span>SECURE CHANNEL ACTIVE</span>
-  <span>|</span>
-  <span>ENDPOINT: timorbuild.app.n8n.cloud</span>
-  <span>|</span>
-  <span>ENCRYPTION: TLS 1.3</span>
+<div class="war-room-footer">
+    STRATEGY WAR ROOM &nbsp;·&nbsp; BUILT BY AMANDA A. APRILIA &nbsp;·&nbsp; CONFIDENTIAL
 </div>
 """, unsafe_allow_html=True)
+
+st.markdown('</div>', unsafe_allow_html=True)
