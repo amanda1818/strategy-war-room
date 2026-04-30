@@ -11,7 +11,7 @@ st.set_page_config(
 )
 
 # ── YOUR N8N WEBHOOK URL ──────────────────────────────────────────────────────
-WEBHOOK_URL = "PASTE_YOUR_PRODUCTION_WEBHOOK_URL_HERE"
+WEBHOOK_URL = https://amanda1818.app.n8n.cloud/webhook/war-room-sim
 
 # ── CUSTOM CSS ────────────────────────────────────────────────────────────────
 st.markdown("""
