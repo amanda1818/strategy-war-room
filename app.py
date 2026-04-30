@@ -11,7 +11,7 @@ st.set_page_config(
 )
 
 # ── YOUR N8N WEBHOOK URL ──────────────────────────────────────────────────────
-WEBHOOK_URL = https://amanda1818.app.n8n.cloud/webhook/war-room-sim
+WEBHOOK_URL = "https://amanda1818.app.n8n.cloud/webhook/war-room-sim"
 
 # ── CUSTOM CSS ────────────────────────────────────────────────────────────────
 st.markdown("""
@@ -166,30 +166,36 @@ st.markdown("""
 }
 
 /* ── INPUT OVERRIDES ── */
-.stTextInput > div > div > input,
-.stTextArea > div > div > textarea {
-    background: rgba(255,255,255,0.03) !important;
-    border: 1px solid rgba(26,110,255,0.25) !important;
+input, textarea,
+[data-baseweb="input"] input,
+[data-baseweb="textarea"] textarea,
+div[data-testid="stTextInput"] input,
+div[data-testid="stTextArea"] textarea {
+    background-color: #040f23 !important;
+    border: 1px solid rgba(26,110,255,0.35) !important;
     border-radius: 0 !important;
-    color: #e8f0ff !important;
+    color: #c8d8ff !important;
     font-family: 'Share Tech Mono', monospace !important;
     font-size: 14px !important;
-    padding: 14px 16px !important;
-    transition: border-color 0.2s, box-shadow 0.2s !important;
     caret-color: #1a6eff !important;
 }
 
-.stTextInput > div > div > input:focus,
-.stTextArea > div > div > textarea:focus {
-    border-color: rgba(26,110,255,0.7) !important;
-    box-shadow: 0 0 0 1px rgba(26,110,255,0.3), inset 0 0 20px rgba(26,110,255,0.04) !important;
+input:focus, textarea:focus,
+div[data-testid="stTextInput"] input:focus,
+div[data-testid="stTextArea"] textarea:focus {
+    border-color: #1a6eff !important;
+    box-shadow: 0 0 12px rgba(26,110,255,0.25) !important;
     outline: none !important;
 }
 
-.stTextInput > div > div > input::placeholder,
-.stTextArea > div > div > textarea::placeholder {
-    color: rgba(255,255,255,0.18) !important;
-    font-style: normal !important;
+input::placeholder, textarea::placeholder {
+    color: rgba(150,180,255,0.3) !important;
+}
+
+[data-baseweb="input"], [data-baseweb="textarea"], [data-baseweb="base-input"] {
+    background-color: #040f23 !important;
+    border-color: rgba(26,110,255,0.35) !important;
+    border-radius: 0 !important;
 }
 
 /* hide streamlit labels (we use our own) */
