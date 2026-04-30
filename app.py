@@ -212,7 +212,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ── WEBHOOK ───────────────────────────────────────────────────────────────────
-WEBHOOK_URL = "https://timorbuild.app.n8n.cloud/webhook-test/war-room-sim"
+WEBHOOK_URL = "https://timorbuild.app.n8n.cloud/webhook/war-room-sim"
 
 # ── HEADER ────────────────────────────────────────────────────────────────────
 st.markdown("""
