@@ -168,6 +168,17 @@ def risk_class(r):
     if r == "HIGH": return "risk-high"
     return "risk-med"
 
+def _source_row(icon, label, source):
+    if isinstance(source, dict):
+        tier = source.get('credibility', '?')
+        tier_color = '#27ae60' if tier == 'TIER 1' else '#f39c12' if tier == 'TIER 2' else '#7a7060'
+        finding = source.get('finding', 'No data')
+        reason = source.get('reason', '')
+        return f'''{icon} <strong style="font-family:DM Mono,monospace;font-size:9px;letter-spacing:2px">{label}</strong>
+        <span style="color:{tier_color};font-family:DM Mono,monospace;font-size:9px;font-weight:600"> [{tier}]</span>
+        — {finding}<br>
+        <span style="font-size:11px;color:#9a9080;padding-left:20px">{reason}</span>'''
+    return f'{icon} {label}: {source}'
 def render_output(parsed, raw):
     if not parsed:
         st.markdown(f"""
@@ -216,6 +227,14 @@ def render_output(parsed, raw):
                 <div class="metric-value">{parsed.get('confidence_score', '?')}<span style="font-size:16px">/10</span></div>
                 <div class="metric-label">DATA CONFIDENCE SCORE</div>
             </div>
+        </div>
+        <div style="padding:12px 24px;background:#fff8f0;border-top:1px solid #ede8e0">
+            <span style="font-family:DM Mono,monospace;font-size:9px;letter-spacing:2px;color:#c0392b">
+            ⚠ DO NOTHING IMPACT:</span>
+            <span style="font-family:DM Serif Display,serif;font-size:20px;color:#c0392b;margin-left:12px">
+            ${threat.get('do_nothing_impact_usd_millions','?')}M</span>
+            <span style="font-family:DM Mono,monospace;font-size:9px;color:#9a9080;margin-left:8px">
+            PROJECTED LOSS IF NO ACTION TAKEN</span>
         </div>
         <div class="wr-card-body">
             {threat.get('summary', '')}<br><br>
