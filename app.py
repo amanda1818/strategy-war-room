@@ -234,10 +234,13 @@ def render_output(parsed, raw):
         rows += f"""
         <tr>
             <td><strong>{o.get('name','')}</strong><br><span style="color:#7a7060;font-size:12px">{o.get('description','')}</span></td>
-            <td>${o.get('revenue_impact_usd_millions','?')}M</td>
-            <td>{o.get('payback_period_months','?')} mo</td>
+            <td>${o.get('revenue_impact_usd_millions','?')}M<br>
+            <span style="font-size:11px;color:#27ae60">ROI: {o.get('roi_pct','?')}%</span></td>
+            <td>{o.get('payback_period_months','?')} mo<br>
+            <span style="font-size:11px;color:#7a7060">Cost: ${o.get('implementation_cost_usd_millions','?')}M</span></td>
             <td class="{risk_class(o.get('risk_rating',''))}">{o.get('risk_rating','')}</td>
-            <td style="font-size:12px;color:#7a7060">{o.get('data_source_used','')}</td>
+            <td style="font-size:11px;color:#7a7060">{o.get('data_source_used','')}<br>
+            <span style="color:#5a6a8a;font-style:italic">{o.get('roi_calculation','')[:80]}...</span></td>
         </tr>"""
 
     st.markdown(f"""
