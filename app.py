@@ -217,7 +217,15 @@ def render_output(parsed, raw):
                 <div class="metric-label">DATA CONFIDENCE SCORE</div>
             </div>
         </div>
-        <div class="wr-card-body">{threat.get('summary', '')}</div>
+        <div class="wr-card-body">
+            {threat.get('summary', '')}<br><br>
+            <strong style="font-family:DM Mono,monospace;font-size:10px;letter-spacing:2px">
+            CALCULATION METHODOLOGY:</strong><br>
+            <span style="font-size:13px;color:#5a6a8a">{threat.get('calculation_methodology', 'Not provided')}</span><br><br>
+            <strong style="font-family:DM Mono,monospace;font-size:10px;letter-spacing:2px">
+            CONFIDENCE RATIONALE:</strong><br>
+            <span style="font-size:13px;color:#5a6a8a">{threat.get('confidence_reason', 'Not provided')}</span>
+        </div>
     </div>""", unsafe_allow_html=True)
 
     # Options table
