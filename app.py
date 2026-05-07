@@ -317,9 +317,14 @@ def render_output(parsed, raw):
         <div class="wr-card-header"><div class="wr-card-title">07 · INTELLIGENCE AUDIT</div></div>
         <div class="wr-card-body">
             <strong style="font-family:DM Mono,monospace;font-size:10px;letter-spacing:2px">DATA RETRIEVED:</strong><br>
-            📁 Annual Report: {sources.get('annual_report_lookup', 'No data')}<br>
-            📊 Financial Telemetry: {sources.get('financial_telemetry_search', 'No data')}<br>
-            📰 Industry News: {sources.get('trusted_industry_news', 'No data')}<br><br>
+            {_source_row('📁', 'ANNUAL REPORT', sources.get('annual_report_lookup', {}))}<br>
+            {_source_row('📊', 'FINANCIAL TELEMETRY', sources.get('financial_telemetry_search', {}))}<br>
+            {_source_row('📰', 'INDUSTRY NEWS', sources.get('trusted_industry_news', {}))}<br>
+            {_source_row('🔍', 'GAP SEARCH', sources.get('gap_intelligence_search', {}))}<br><br>
+            <strong style="font-family:DM Mono,monospace;font-size:10px;letter-spacing:2px">
+            OVERALL DATA QUALITY:</strong>
+            <span style="font-weight:600;color:#1a3a8f"> {parsed.get('overall_data_quality','?')}</span>
+            — {parsed.get('data_quality_rationale','')}<br><br>
             <strong style="font-family:DM Mono,monospace;font-size:10px;letter-spacing:2px">DATA GAPS (ACTION REQUIRED):</strong>
             <ul style="margin-top:8px;padding-left:20px">{gap_html}</ul>
         </div>
